@@ -1,4 +1,4 @@
-# This .travis.yml is modified from pandoc's at https://github.com/jgm/pandoc/blob/master/.travis.yml
+# This .travis.yml is modified from pandoc-nightly's at https://github.com/pandoc-extras/pandoc-nightly/blob/master/.travis.yml
 language: generic
 cache:
   directories:
@@ -16,9 +16,9 @@ matrix:
           - hvr-ghc
   - os: osx
 before_install:
-  # pandoc-nightly version
+  # gitit-nightly version
   - |
-    printf "%s: %s\n" "pandoc-nightly version" "0.2.2"
+    printf "%s: %s\n" "gitit-nightly version" "0.2.2"
 install:
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
@@ -31,27 +31,26 @@ install:
   - export PATH=$PATH:$HOME/.local/bin
 before_script:
   # clone from git
-  - git clone https://github.com/jgm/pandoc
-  - cd pandoc
-  - git submodule update --init
-  # get the current commit hash of pandoc
+  - git clone https://github.com/jgm/gitit
+  - cd gitit
+  # get the current commit hash of gitit
   - HASH=$(git rev-parse --short HEAD)
   # filename
   - |
     if [[ `uname` == "Darwin" ]]; then
-      filename=pandoc-osx-$HASH
+      filename=gitit-osx-$HASH
     else
-      filename=pandoc-amd64-$HASH
+      filename=gitit-amd64-$HASH
     fi
 script:
   # build
   - stack setup
-  - stack build --flag 'pandoc:embed_data_files'
+  - stack build
   - cd ..
-  # path to the pandoc executable
-  - path2pandoc="$(find pandoc/.stack-work/install -type f -iname 'pandoc')"
+  # path to the gitit executable
+  - path2gitit="$(find gitit/.stack-work/install -type f -iname 'gitit')"
   # debug
-  - $path2pandoc -v
+  - $path2gitit -v
 after_success:
   # if it's a cron job, create git tag for GitHub Releases, only on Linux build
   - |
@@ -60,23 +59,16 @@ after_success:
       git config --global user.name "Travis CI"
       export GIT_TAG="hash-$HASH"
       git tag $GIT_TAG -a -m "Generated tag from TravisCI build $TRAVIS_BUILD_NUMBER"
-      git push --quiet https://$GH_TOKEN_SECURE@github.com/pandoc-extras/pandoc-nightly $GIT_TAG > /dev/null 2>&1
+      git push --quiet https://$GH_TOKEN_SECURE@github.com/pandoc-extras/gitit-nightly $GIT_TAG > /dev/null 2>&1
     fi
-  # zip pandoc binary and move to dist/ if it is the git-tag build (GitHub Releases)
+  # zip gitit binary and move to dist/ if it is the git-tag build (GitHub Releases)
   - |
     if [[ ! -z "$TRAVIS_TAG" ]]; then
       mkdir -p $filename
-      mv $path2pandoc $filename
-      zip $filename.zip $filename/pandoc
+      mv $path2gitit $filename
+      zip $filename.zip $filename/gitit
       mkdir -p dist
       mv $filename.zip dist/
-    fi
-  # download Windows' nightly from appveyor if it is the git-tag build (GitHub Releases), only on Linux build
-  - |
-    if [[ ! -z "$TRAVIS_TAG" && `uname` != "Darwin" ]]; then
-      mkdir -p dist
-      wget 'https://ci.appveyor.com/api/projects/jgm/pandoc/artifacts/windows/pandoc-windows-i386.msi?branch=master' -O dist/pandoc-windows-$HASH.msi
-      wget 'https://ci.appveyor.com/api/projects/jgm/pandoc/artifacts/windows/pandoc-windows-i386.zip?branch=master' -O dist/pandoc-windows-$HASH.zip
     fi
   # debug
   - ls -l dist/
@@ -88,6 +80,3 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-env:
-  global:
-    secure: PDNr60bZ/drP2nEkW+8mP9DNPONjElxMrxLSsVtXcDLJbDZPmyFahgiHmYERYiUGXQmzuyQbqQNBydFnHUbeRdZ+owLGzTIv8RzZ1SX+7OKZTwc38cJV3nWq3/F57DXsI32IW21RU1JN0HjCi33X4pDlrz597D78LKS3wRAREgxYMcq1FO+GtQ8B7NdLgFni0g94GiIUOyDoAut1yh43V7LoMtt6izQFJFyENUsaHl6xhhdxBoE6qnNhwP+CxscsCf+keezwCFgjuV+cwmxDhspY5Kx/bPfN0c2/Dwgv/nq+JjsbvVYJUjg/gHvg2dlwkGZKXIn8YmI492UwYxSOJ3TgLktdEgrkjRDPGwRvGpkqkZcZg65BEaTNzb/mj+kqd1sGo3NAfuDP8ArqJrYM2G4qfD2yIDKsFSMnIOH+6g6jmTEVPQt9yA2a3ZyUrXzdgs2i/AtsmUB4YYWHcIjcsjmdGZm6CgG3BMIMUmNuWZk9Ad3YEibd6raZ52RuTkICm0UQjCckg4QG10gS1ZYTTLyJle8f2HWxZZixBGfJQMmJsfn8jFoGsl9SKIseQ3VtEnmsHXSqW9tADFQ9+3n7wiCe+3mUaBVbKhKs6LCEf+oHi/nnkOSbPePdd43gBx3u85dww7jwoE5zDU22zWEBTa3wLztZfHAut8BQ5bYIeXw=
